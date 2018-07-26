@@ -1,0 +1,4 @@
+repeat 30
+reset
+run ant-pre ant-novice 50
+run ant-post ant-final 50

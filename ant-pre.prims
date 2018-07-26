@@ -1,0 +1,511 @@
+// Simple ANT v13 - fully functional, 40ms difference post meditation
+define task ant-pre {
+//	goal-chunk-spreads: t
+	production-prim-latency: 0
+    initial-goals: (focus perform)
+    goals: (wander ) //just-react)
+    task-constants: (addition count-fact count-fact giveanswer)
+//    start-screen: begin
+    imaginal-autoclear: nil
+}
+
+
+define goal focus {
+
+operator check-task (activation=1) {		//after response has been given, retrieve memory
+		V1 <> target
+		RT1 = nil
+	==>
+		check -> AC1
+		Memory -> RT1 			//if it retrieves some other memory, possible hook for mind-wandering
+	}
+
+//   operator refresh (activation=1) {
+//	V1 <> target
+//	RT4=Focus
+//	     ==>
+//	refresh->AC1
+//	RT1->WM1 // put intention in imaginal in order to create memory later on
+//	RT2->WM2 // improves chances of meta-task getting retrieved again
+//	RT3->WM3
+//	RT4->WM4
+//	Focus->G1 // reinforce or bring focus goal back into play
+//	nil->G4 // deactivate wander goal
+//	Task->RT3 // retrieve current task
+//  }
+
+//	operator remember-focus (activation=0.5) {
+//	V1 <> target
+//	RT2=Daydream
+//	    ==>
+//	remember->AC1
+//	RT1->WM1 // put memory in imaginal in order to create memory later on
+//	RT2->WM2
+//	RT3->WM3
+//	RT4->WM4
+//	Focus->G1
+//	Memory->RT1 // retrieve a current task even if a mind wandering memory was retrieved
+//	}
+	
+	operator reinforce (activation=1) {
+		V1 <> target
+		RT4 = perform
+	==>
+		reinforce -> AC1
+		RT4 -> G2 // reinforce perform goal or put it back in place if deleted
+		nil -> G5 // just-react slot
+	}
+
+	operator correct-prepared-answer (activation=1.5){
+	V1 = target
+	WM2 = response-prepped    	//if response is prepared
+	V4 <> WM1					//but central arrow in vision is not the same as the one prepared in working memory
+	==>
+	V4 -> WM1					//correct prepared arrow in working memory
+	prepCorrect -> AC1
+	V4 -> AC2
+	}
+
+}
+define goal wander {
+
+    operator thought-pump (activation=1) {   //retrieve random memory
+//    	V1 <> target
+		RT1=nil
+	==>
+		pump->AC1
+		Memory->RT1
+	  }
+
+    operator Imagine-memory (activation=1) {  //imagine retrieved memory. let it occupy working memory
+
+//    	V1 <> target
+		RT2=Daydream
+	      ==>
+		imagine->AC1
+		RT1->WM1
+		RT2->WM2
+		RT3->WM3
+		RT4->WM4
+		nil->G1 // Focus slot
+		Wander->G4
+		nil -> G2 // perform slot
+		//just-react -> G5
+		//missed -> G3 //trying to link mindwandering and missing of response
+    }
+
+    operator Imagine-semi (activation=1) { //ponder intention
+//    	V1 <> target
+		RT2=Intention
+        ==>
+		imagine-semi->AC1
+		RT1->WM1
+		RT2->WM2
+		RT3->WM3
+		RT4->WM4
+		Wander->G4
+    }
+    operator correct-retrieved-mapping (activation=6) {  //when a mapping has been retrieved, but the centre arrow and retrieved response don't match
+    	V1 = target
+		//RT2 = r-mapping
+		WM2 = response-retrieved
+		V4 <> RT3
+	==>
+		retCorrect -> AC1
+		V4 -> AC2
+		V4 -> WM1
+		response-prepped -> WM2
+//		nil -> RT2   //clears r-mapping slot so mapping can be retrieved again
+//		r-mapping -> RT2		//retrieved correct response by itself (trying to reduce missed)
+//		V4 -> RT3
+//		V4 -> WM1
+	}
+}
+
+define goal perform {
+
+	operator prepare-answer (activation=1) {		//when stimulus is active, but no mapping’s been retrieved
+							//retrieve chunk associated with stimulus 
+		V1 = target
+		//RT2 = nil
+		WM2 = nil 			//to prevent repeats further down the chain
+	==>
+		V2 -> WM1 					//leftmost arrow (l or r as character)
+		response-prepped -> WM2
+		prepare -> AC1 
+		V2 -> AC2
+	}
+
+	operator retrieve-mapping (activation=1) {
+	V1 = target
+	WM2 = response-prepped            //when target is active and answer has been prepared
+	//RT2 = nil
+	==>
+	WM1 -> RT3
+	r-mapping -> RT2
+	retrieving-mapping -> AC1
+	WM1 -> AC2
+	response-retrieved -> WM2
+	}
+
+	
+	operator respond-right (activation=1) {	//respond with mapping that’s been retrieved
+		V1 = target
+		WM2 = response-retrieved
+		RT2 = r-mapping
+		RT4 = pressRight
+	==>
+		keypress -> AC1
+		press-right -> AC2
+	}
+
+	operator respond-left (activation=1) {	//same as above
+		V1 = target
+		WM2 = response-retrieved
+		RT2 = r-mapping
+		RT4 = pressLeft
+	==>
+		keypress -> AC1
+		press-left -> AC2
+	}
+
+}
+
+
+
+//define goal just-react {
+//
+//    operator just-left (activation=0) { 			// possibly make higher to reduce misses during mindwandering
+//		V1=target
+// 	      ==>
+//		keypress->AC1
+//		just-left->AC2
+  //  }
+//
+  //  operator just-right (activation=0) {
+	//	V1=target
+      //  ==>
+//		keypress->AC1
+//		just-right->AC2
+  //  }
+//
+//}
+
+
+//define goal missed {
+//
+//	operator missed-left (activation=0.15) {
+//		V1 = target
+//		RT2 <> r-mapping // not in the process of retrieving response
+//	==>
+//		keypress -> AC1
+//		missed-left -> AC2
+//		Focus -> G1
+//		nil -> G4
+//	}
+//
+//	operator missed-right (activation=0.15) {
+//		V1 = target
+//		RT2 <> r-mapping // not in the process of retrieving response
+//	==>
+//		keypress -> AC1
+//		missed-right -> AC2
+//		Focus -> G1
+//		nil -> G4
+//	}
+//}
+
+
+
+
+
+define facts {
+
+//(meta Memory Intention Meta-Task Focus :activation 3) 	//an intention to stay focused
+(perf Memory Intention Task perform :activation 3)		//an intention to perform the test
+
+(rmRt Association r-mapping l pressLeft :activation 3.0) //what to do if answer is l
+(rmLt Association r-mapping r pressRight :activation 3.0) //what to do if answer is r
+
+(m1 Memory Daydream Memory-1 approach :activation 3.282)
+(m2 Memory Daydream Memory-2 avoid :activation 3.004)
+(m3 Memory Daydream Memory-3 stay :activation 2.99)
+(m4 Memory Daydream Memory-4 avoid :activation 3.34)
+(m5 Memory Daydream Memory-5 approach :activation 2.898)
+(m6 Memory Daydream Memory-6 approach :activation 3)
+(m7 Memory Daydream Memory-7 approach :activation 3.184)
+(m8 Memory Daydream Memory-8 stay :activation 3.03)
+(m9 Memory Daydream Memory-9 approach :activation 3.28)
+(m10 Memory Daydream Memory-10 avoid :activation 3.206)
+(m11 Memory Daydream Memory-11 approach :activation 3.058)
+(m12 Memory Daydream Memory-12 approach :activation 2.844)
+(m13 Memory Daydream Memory-13 approach :activation 3.114)
+(m14 Memory Daydream Memory-14 stay :activation 2.724)
+(m15 Memory Daydream Memory-15 stay :activation 3.048)
+(m16 Memory Daydream Memory-16 approach :activation 3.162)
+(m17 Memory Daydream Memory-17 avoid :activation 3.042)
+(m18 Memory Daydream Memory-18 approach :activation 3.176)
+(m19 Memory Daydream Memory-19 stay :activation 3.408)
+(m20 Memory Daydream Memory-20 avoid :activation 3.184)
+(m21 Memory Daydream Memory-21 avoid :activation 3.054)
+(m22 Memory Daydream Memory-22 approach :activation 3.128)
+(m23 Memory Daydream Memory-23 approach :activation 3.086)
+(m24 Memory Daydream Memory-24 avoid :activation 2.738)
+(m25 Memory Daydream Memory-25 approach :activation 2.916)
+(m26 Memory Daydream Memory-26 approach :activation 3.244)
+(m27 Memory Daydream Memory-27 approach :activation 2.992)
+(m28 Memory Daydream Memory-28 avoid :activation 3.116)
+(m29 Memory Daydream Memory-29 avoid :activation 2.798)
+(m30 Memory Daydream Memory-30 approach :activation 3.012)
+
+}
+
+define sji {
+(retrieve-mapping correct-retrieved-mapping 2)
+(correct-retrieved-mapping retrieve-mapping 2)
+}
+
+define action keypress {
+    latency: 0.085
+    output: key-has-been-pressed
+}
+
+
+define action action {
+	latency: 0.1
+    noise: 0.01
+    distribution: uniform
+//	output: Pressing
+}
+
+define action press-right {
+	latency: 0.0
+    noise: 0.00
+    distribution: uniform
+//	output: Pressing
+}
+
+define action press-left {
+	latency: 0.0
+    distribution: uniform
+//	output: Not-Pressing
+}
+
+define action refresh {
+	latency: 0.0
+    noise: 0.0
+    distribution: uniform
+}
+
+define action remember {
+	latency: 0.0
+    noise: 0.0
+    distribution: uniform
+}
+
+define action check {
+	latency: 0.0
+    noise: 0.0
+    distribution: uniform
+}
+
+define action check-s-r {
+	latency: 0.0
+    noise: 0.0
+    distribution: uniform
+}
+
+define action pump {
+	latency: 0.0
+    noise: 0.0
+    distribution: uniform
+}
+
+define action imagine {
+	latency: 0.0
+    noise: 0.0
+    distribution: uniform
+}
+
+define action just-left {
+	latency: 0.085
+    noise: 0.0
+    distribution: uniform
+}
+
+define action just-right {
+	latency: 0.085
+    noise: 0.0
+    distribution: uniform
+}
+
+define action missed-left {
+	latency: 0.0
+    noise: 0.0
+    distribution: uniform
+}
+
+define action missed-right {
+	latency: 0.0
+    noise: 0.0
+    distribution: uniform
+}
+define action prepare {
+	latency: 0.0
+    noise: 0.0
+    distribution: uniform
+}
+define action prepCorrect {
+	latency: 0.0
+    noise: 0.0
+    distribution: uniform
+}
+define action mapCorrect {
+	latency: 0.0
+    noise: 0.0
+    distribution: uniform
+}
+define action retrieving-mapping {
+	latency: 0.0
+    noise: 0.0
+    distribution: uniform
+}
+
+
+
+//SCREENS 
+//define screen begin {
+//}
+
+define script {
+
+//—————creating trials list—————
+//factors:                                      //the trials will consist of these factors in all their combinations
+cues = ["no", "centre", "double", "spatial"]
+targetLocs = ["top", "bottom"]
+targetDirs = ["left", "right"]
+flankers = ["congruent", "incongruent"]			//Ainsworth 2013 didn't use neutral flankers
+//and 2 repetitions, don"t forget
+
+trials = []										//empty trials list
+curr = -1
+for cue in cues{
+	for loc in targetLocs{
+		for dir in targetDirs{
+			for flanker in flankers{
+				curr = curr +1
+				trials[curr]=([cue, loc, dir, flanker])
+				//trials[48+curr]=([cue, loc, dir, flanker])			//REMOVING DOUBLING TO REDUCE NO. OF TRIALS temporarily
+				//print(curr)
+			}
+		}
+	}
+}
+
+trials = shuffle(trials)	
+print(length(trials), "trials in list,")
+tempTrials = []										//CREATING SMALLER TRIALS LIST TO CUT DOWN ON RUNTIME
+for i in 0 to 19{
+	tempTrials[i]=trials[i]
+}
+
+print("but currently only doing", length(tempTrials), ".")
+
+	for trial in tempTrials {
+
+		//set-buffer-slot(WM, 2, "awaiting-prep") //condition for prepare-response to fire, to prevent achronological firing
+		
+
+		//————logging data————
+		set-data-file-field(1, trial[3]) 		//logging whether congruent or incongruent
+		print("Presenting", trial[2], "target with", trial[3], "flankers.")
+
+		//—————target————                    
+		arrows = [] //empty target
+		if(trial[2]=="right"){
+			if (trial[3]=="congruent"){
+				arrows = ["r", "r", "r", "r", "r"]
+			}
+			else{	
+				arrows = ["l", "l", "r", "l", "l"]
+			}
+		}	else{		
+						if(trial[2]=="left"){
+						if (trial[3]=="congruent"){
+							arrows = ["l", "l", "l", "l", "l"]
+						}
+						else{
+							arrows = ["r", "r", "l", "r", "r"]
+						}
+				}
+			}
+
+		print(time(), "__preceding target")
+		screen("target", arrows[0], arrows[1], arrows[2], arrows[3], arrows[4])
+		tStart = time()
+		tGoal = tStart + 1.7
+		print("Giving command to display target for", tGoal - tStart, "secs")
+		run-until-relative-time-or-action(1.7, "keypress")
+		rt = time()-tStart
+		set-data-file-field(2, rt)
+		print("__target was active for", rt, "secs")
+
+		ac = last-action()
+
+		print(ac)
+
+		pressed = ""
+		if(ac[0] == "keypress"){										//determining what was actually pressed
+
+			if(rt > 1.7){													//taking care of missed reponses
+				pressed = "-"											//setting pressed as '-' so that it's logged as wrong answer
+				set-data-file-field(4, "missed-but-pressed")
+			}
+			else {
+				if(ac[1] == "press-left"){ 
+					pressed = "l"
+					set-data-file-field(4, "intentional")	
+				}
+				if(ac[1] == "just-left"){
+					pressed = "l"
+					set-data-file-field(4, "random")
+				}
+				if(ac[1] == "press-right"){
+					pressed = "r"
+					set-data-file-field(4, "intentional")
+				}
+				if(ac[1] == ("just-right")){
+					pressed = "r"
+					set-data-file-field(4, "random")
+				}
+			}
+			
+		}
+		else {
+			print("last action wasn't a keypress")
+			pressed = "-"
+			set-data-file-field(4, "missed-nopress"+ac[0])
+		}
+
+		if(pressed == arrows[2]){									//checking if pressed answer was correct
+			set-data-file-field(3, "True")							//writing it into the datafile in column 3
+		}
+		else{
+			set-data-file-field(3, "False")	
+		}
+
+
+		//plot-point(rt)
+
+
+		//———all fixations---
+		restTime = 4-rt
+		restStart = time()
+		screen("fixation/cue")
+		print("__before restTime")
+		run-relative-time(restTime)
+		print("__after restTime, was ", time()-restStart, ", should be ", restTime)
+
+		trial-end()
+	}
+}
